@@ -9,6 +9,7 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        multiDexEnabled true
     }
     buildTypes {
         release {
@@ -44,5 +45,6 @@ dependencies {
 
     compile 'io.ticofab.androidgpxparser:parser:1.1.0'
 
+    compile 'com.google.android.gms:play-services:9.8.0'
 
 }
