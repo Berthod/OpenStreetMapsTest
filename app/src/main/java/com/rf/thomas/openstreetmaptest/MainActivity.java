@@ -40,6 +40,7 @@ import org.mapsforge.map.layer.cache.TileCache;
 import org.mapsforge.map.layer.overlay.Marker;
 import org.mapsforge.map.layer.overlay.Polyline;
 import org.mapsforge.map.layer.renderer.TileRendererLayer;
+import org.mapsforge.map.model.DisplayModel;
 import org.mapsforge.map.reader.MapFile;
 import org.mapsforge.map.rendertheme.InternalRenderTheme;
 import org.osmdroid.util.GeoPoint;
@@ -63,13 +64,17 @@ import io.ticofab.androidgpxparser.parser.domain.Track;
 import io.ticofab.androidgpxparser.parser.domain.WayPoint;
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
-    private static final String MAP_FILE = "czech_republic.map";
+    private static final String MAP_FILE = "Ostrava.map";
 
     GPXParser mParser = new GPXParser();
+
+    TextView mText;
 
     List<Route> routes = new ArrayList<>();
     List<RoutePoint> points = new ArrayList<>();
@@ -81,7 +86,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 
     private LocationRequest mLocationRequest;
-    private long UPDATE_INTERVAL = 10000;  /* 10 secs */
+    private long UPDATE_INTERVAL = 5000;  /* 10 secs */
     private long FASTEST_INTERVAL = 5000; /* 5 secs */
 
     private ArrayList<String> permissionsToRequest;
@@ -95,11 +100,14 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
-        marker = createTappableMarker(this, R.drawable.common_google_signin_btn_icon_dark, null, "Marker" );
+        marker = createTappableMarker(this, R.drawable.marker_red, null, "Marker" );
+
 
         permissions.add(ACCESS_FINE_LOCATION);
         permissions.add(ACCESS_COARSE_LOCATION);
+        permissions.add(WRITE_EXTERNAL_STORAGE);
 
         permissionsToRequest = findUnAskedPermissions(permissions);
         //get the permissions we have asked for before but are not granted..
@@ -139,7 +147,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         AndroidGraphicFactory.createInstance(this.getApplication());
 
         this.mapView = new MapView(this);
-        setContentView(this.mapView);
+
+        mText = (TextView) findViewById(R.id.mText);
+        mapView = (MapView) findViewById(R.id.mapView);
 
         this.mapView.setClickable(true);
         this.mapView.getMapScaleBar().setVisible(true);
@@ -194,30 +204,30 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         mapView.getLayerManager().getLayers().add(polyline);
         mapView.getLayerManager().getLayers().add(marker);
 
-       /* Thread thread = new Thread(new Runnable() {
+        /*Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 for (int i = 0; i < 8; i++) {
                     if(i==0) {
-                        mapView.setCenter(new LatLong(50.239958, 17.187825));
+                        marker.setLatLong(new LatLong(50.239958, 17.187825));
                     } else if (i==1) {
-                        mapView.setCenter(new LatLong(50.246435, 17.176938));
+                        marker.setLatLong(new LatLong(50.246435, 17.176938));
                     }  else if (i==2) {
-                        mapView.setCenter(new LatLong(50.257834, 17.171777));
+                        marker.setLatLong(new LatLong(50.257834, 17.171777));
                     }  else if (i==3) {
-                        mapView.setCenter(new LatLong(50.258941, 17.142041));
+                        marker.setLatLong(new LatLong(50.258941, 17.142041));
                     }
                     else if (i==4) {
-                        mapView.setCenter(new LatLong(50.258941, 17.142041));
+                        marker.setLatLong(new LatLong(50.258941, 17.142041));
                     }
                     else if (i==5) {
-                        mapView.setCenter(new LatLong(50.258941, 17.142041));
+                        marker.setLatLong(new LatLong(50.258941, 17.142041));
                     }
                     else if (i==6) {
-                        mapView.setCenter(new LatLong(50.259941, 17.142041));
+                        marker.setLatLong(new LatLong(50.259941, 17.142041));
                     }
                     else if (i==7) {
-                        mapView.setCenter(new LatLong(50.258941, 17.142041));
+                        marker.setLatLong(new LatLong(50.258941, 17.142041));
                     }
                     try {
                         Thread.sleep(2000);
@@ -276,7 +286,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         super.onResume();
 
         if (!checkPlayServices()) {
-            //latLng.setText("Please install Google Play services.");
+            mText.setText("Please install Google Play services.");
 
         }
     }
@@ -299,7 +309,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     public void onLocationChanged(Location location) {
 
-        if(location!=null);
+        if(location!=null) {
+            mText.setText("Latitude : "+ location.getLatitude()+" , Longitude : "+ location.getLongitude());
+            LatLong latLong = new LatLong(location.getLatitude(), location.getLongitude());
+            marker.setLatLong(latLong);
+            mapView.invalidate();
+            mapView.setCenter(latLong);
+        }
     }
 
     @Override
@@ -319,9 +335,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         if(mLocation!=null)
         {
-            //latLng.setText("Latitude : "+mLocation.getLatitude()+" , Longitude : "+mLocation.getLongitude());
+            mText.setText("Latitude : "+mLocation.getLatitude()+" , Longitude : "+mLocation.getLongitude());
             LatLong latLong = new LatLong(mLocation.getLatitude(), mLocation.getLongitude());
             marker.setLatLong(latLong);
+            mapView.invalidate();
             mapView.setCenter(latLong);
         }
 
@@ -414,6 +431,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         Drawable drawable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ? c.getDrawable(resourceIdentifier) : c.getResources().getDrawable(resourceIdentifier);
         Bitmap bitmap = AndroidGraphicFactory.convertToBitmap(drawable);
         bitmap.incrementRefCount();
+        bitmap.scaleTo(37, 60);
         return new Marker(latLong, bitmap, 0, -bitmap.getHeight() / 2) {
             @Override
             public boolean onTap(LatLong geoPoint, Point viewPosition,
