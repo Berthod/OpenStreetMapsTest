@@ -23,7 +23,7 @@ android {
     }
 }
 
-def mapsforge_version = "0.8.0"
+def mapsforge_version = "0.9.0"
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])

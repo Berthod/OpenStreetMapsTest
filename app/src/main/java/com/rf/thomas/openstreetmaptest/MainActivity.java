@@ -27,6 +27,7 @@ import com.google.android.gms.location.LocationServices;
 
 import org.mapsforge.core.graphics.Bitmap;
 import org.mapsforge.core.graphics.Color;
+import org.mapsforge.core.graphics.GraphicFactory;
 import org.mapsforge.core.graphics.Paint;
 import org.mapsforge.core.graphics.Style;
 import org.mapsforge.core.model.LatLong;
@@ -37,6 +38,7 @@ import org.mapsforge.map.android.util.AndroidUtil;
 import org.mapsforge.map.android.view.MapView;
 import org.mapsforge.map.datastore.MapDataStore;
 import org.mapsforge.map.layer.cache.TileCache;
+import org.mapsforge.map.layer.overlay.Circle;
 import org.mapsforge.map.layer.overlay.Marker;
 import org.mapsforge.map.layer.overlay.Polyline;
 import org.mapsforge.map.layer.renderer.TileRendererLayer;
@@ -71,6 +73,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
     private static final String MAP_FILE = "Ostrava.map";
+    private static final GraphicFactory GRAPHIC_FACTORY = AndroidGraphicFactory.INSTANCE;
 
     GPXParser mParser = new GPXParser();
 
@@ -80,6 +83,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     List<RoutePoint> points = new ArrayList<>();
 
     Marker marker;
+    private Circle circle;
+
 
     Location mLocation;
     GoogleApiClient mGoogleApiClient;
@@ -97,13 +102,29 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     private MapView mapView;
 
+    private static Paint getPaint(int color, int strokeWidth, Style style) {
+        Paint paint = GRAPHIC_FACTORY.createPaint();
+        paint.setColor(color);
+        paint.setStrokeWidth(strokeWidth);
+        paint.setStyle(style);
+        return paint;
+    }
+
+    private static Paint getDefaultCircleFill() {
+        return getPaint(GRAPHIC_FACTORY.createColor(48, 0, 0, 255), 0, Style.FILL);
+    }
+
+    private static Paint getDefaultCircleStroke() {
+        return getPaint(GRAPHIC_FACTORY.createColor(160, 0, 0, 255), 2, Style.STROKE);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         marker = createTappableMarker(this, R.drawable.marker_red, null, "Marker" );
-
+        circle = new Circle(null, 0, getDefaultCircleFill(), getDefaultCircleStroke());
 
         permissions.add(ACCESS_FINE_LOCATION);
         permissions.add(ACCESS_COARSE_LOCATION);
@@ -203,6 +224,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         // adding the layer to the mapview
         mapView.getLayerManager().getLayers().add(polyline);
         mapView.getLayerManager().getLayers().add(marker);
+        mapView.getLayerManager().getLayers().add(circle);
 
         /*Thread thread = new Thread(new Runnable() {
             @Override
@@ -313,6 +335,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             mText.setText("Latitude : "+ location.getLatitude()+" , Longitude : "+ location.getLongitude());
             LatLong latLong = new LatLong(location.getLatitude(), location.getLongitude());
             marker.setLatLong(latLong);
+            circle.setLatLong(latLong);
+            circle.setRadius(location.getAccuracy());
             mapView.invalidate();
             mapView.setCenter(latLong);
         }
@@ -338,6 +362,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             mText.setText("Latitude : "+mLocation.getLatitude()+" , Longitude : "+mLocation.getLongitude());
             LatLong latLong = new LatLong(mLocation.getLatitude(), mLocation.getLongitude());
             marker.setLatLong(latLong);
+            circle.setLatLong(latLong);
+            circle.setRadius(mLocation.getAccuracy());
             mapView.invalidate();
             mapView.setCenter(latLong);
         }
